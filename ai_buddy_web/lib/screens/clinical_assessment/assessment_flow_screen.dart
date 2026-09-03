@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../widgets/crisis_reentry_surface.dart'
+    show kLastCrisisTimestampKey;
 import '../../models/message.dart' show RiskLevel;
 import '../../navigation/home_tab_deeplink.dart';
 import '../../providers/assessment_provider.dart';
@@ -10,6 +12,7 @@ import '../../theme/gq_theme.dart';
 import '../../theme/gq_tokens.dart';
 import '../../widgets/app_bottom_nav.dart' show AppTab;
 import '../../widgets/crisis_resources.dart';
+import '../../services/firebase_service.dart';
 import '../../services/notification_service.dart';
 import '../../widgets/gq/gq.dart';
 import 'assessment_models.dart';
@@ -171,10 +174,29 @@ class _AssessmentFlowScreenState extends State<AssessmentFlowScreen>
             // a local timestamp so QA + the next session can at least
             // see the request landed; queue can be drained later.
             SharedPreferences.getInstance().then((prefs) async {
-              final ts = DateTime.now().toIso8601String();
+              final now = DateTime.now();
+              final ts = now.toIso8601String();
               final list = prefs.getStringList('follow_up_24h_pending') ?? [];
               list.add(ts);
               await prefs.setStringList('follow_up_24h_pending', list);
+              // 2026-09-03: ALSO arm the in-app crisis re-entry surface.
+              //
+              // This line is what makes the "the re-entry surface remains the
+              // fallback" claim below TRUE. Until now it was false on this
+              // path: kLastCrisisTimestampKey was written in exactly one place
+              // (interactive_chat_screen._recordCrisisTimestamp), reached only
+              // when a crisis was detected in CHAT. A user who disclosed here,
+              // in the Q9 assessment bridge, and then denied the notification
+              // permission got NEITHER the push NOR the in-app surface — while
+              // two comments assured a reader they were covered.
+              //
+              // A false safety claim is worse than a missing one: it stops the
+              // real gap from ever being found. Found by a cross-vendor audit
+              // lane, confirmed by grep (one writer, and it was not this file).
+              await prefs.setInt(
+                kLastCrisisTimestampKey,
+                now.millisecondsSinceEpoch,
+              );
               if (kDebugMode) {
                 debugPrint('[follow-up] 24h flag queued @ $ts');
               }
@@ -203,9 +225,24 @@ class _AssessmentFlowScreenState extends State<AssessmentFlowScreen>
             // completely. Log it instead, so a failure to arm the follow-up is
             // at least visible in diagnostics rather than indistinguishable
             // from success. The in-app crisis re-entry surface
-            // (kLastCrisisTimestampKey, 72h) remains the real fallback.
-            NotificationService.scheduleCrisisFollowup().catchError((Object e) {
+            // (kLastCrisisTimestampKey, 72h) is the real fallback, and as of
+            // 2026-09-03 this path actually arms it (see the setInt above) —
+            // it did not before, which made this sentence a false assurance.
+            NotificationService.scheduleCrisisFollowup()
+                .catchError((Object e, StackTrace st) {
+              // 2026-09-03: report to Crashlytics, not just the system log.
+              //
+              // Adding .catchError was a net LOSS of visibility and I missed
+              // it. Before, this was a bare unawaited call, so a throw became
+              // an unhandled async error, which FirebaseService routes through
+              // PlatformDispatcher.onError into Crashlytics as fatal
+              // (firebase_service.dart:142-145). Catching it here kept the UI
+              // safe but also took the failure OFF the crash dashboard and put
+              // it in logcat, where nobody is looking. On a self-harm-adjacent
+              // path that is the wrong trade. Do both: swallow the crash,
+              // report the error.
               debugPrint('[follow-up] crisis follow-up FAILED to schedule: $e');
+              FirebaseService().recordError(e, st, fatal: false);
             });
           }
         case BridgeAction.talkNow:
