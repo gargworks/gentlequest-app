@@ -135,6 +135,16 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   String? _crisisTakeoverShownForMessageId;
   bool _userSentThisSession = false;
   bool _composerWasFocused = false;
+
+  /// Whether `chat_composer_focused` has already been logged for this screen.
+  ///
+  /// Separate from [_composerWasFocused], which tracks the LIVE focus state and
+  /// must reset on blur to detect the next rising edge. This one never resets:
+  /// the funnel stage means "this user engaged the composer", once, not "how
+  /// many times they tapped in and out". Before 2026-09-03 the two were the
+  /// same flag, so a user who focused, blurred and refocused counted three
+  /// times and the stage read higher than the one above it.
+  bool _composerEngagementLogged = false;
   /// State D — voice input mode active.
   bool _voiceInputActive = false;
   String _voiceTranscript = '';
@@ -479,7 +489,7 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
       if (!mounted) return;
       if (_inputFocus.hasFocus && !_composerWasFocused) {
         _composerWasFocused = true;
-        FirebaseService().logEvent('chat_composer_focused');
+        _logComposerEngagedOnce();
       } else if (!_inputFocus.hasFocus) {
         _composerWasFocused = false;
       }
@@ -563,6 +573,28 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
   void _addSampleMessages(ChatProvider chatProvider) {
     // The ChatProvider already loads initial greeting message
     // No need to add sample messages as the provider handles this
+  }
+
+  /// Logs `chat_composer_focused` at most once per screen, from whichever
+  /// path engages the composer first.
+  ///
+  /// Added 2026-09-03 to fix two defects that both corrupted the same funnel
+  /// stage:
+  ///
+  ///   1. ORDER. A starter chip calls _sendMessage() directly, so
+  ///      chat_send_attempted fired while the composer had never been focused.
+  ///      The funnel then showed a send with no preceding engagement — any
+  ///      sequence-based reading of those two stages was wrong.
+  ///   2. INFLATION. The old flag reset on blur, so focus/blur/refocus logged
+  ///      the event three times. Against a once-per-user stage above it, the
+  ///      step could read as growth.
+  ///
+  /// Tapping a chip IS engaging the composer — it fills the field and sends —
+  /// so it counts here, and it counts BEFORE the send.
+  void _logComposerEngagedOnce() {
+    if (_composerEngagementLogged) return;
+    _composerEngagementLogged = true;
+    FirebaseService().logEvent('chat_composer_focused');
   }
 
   void _sendMessage() async {
@@ -1651,6 +1683,10 @@ class _InteractiveChatScreenState extends State<InteractiveChatScreen> {
                   .expand((prompt) => [
                         _buildChip(prompt, () {
                           _messageController.text = prompt;
+                          // BEFORE the send: a chip tap is composer
+                          // engagement, and the funnel stage must precede
+                          // chat_send_attempted rather than trail it.
+                          _logComposerEngagedOnce();
                           _sendMessage();
                         }),
                         SizedBox(width: 8.h),

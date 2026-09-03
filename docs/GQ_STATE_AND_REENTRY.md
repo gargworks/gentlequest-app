@@ -75,55 +75,56 @@ unknown, not just its cause.
 
 ## OPEN QUEUE (ordered by leverage)
 
-1. **Finish the shipped-code audit.** 18 candidates. **13 resolved** (7 real -> fixed,
-   3 refuted, 3 partially-confirmed with no action), **5 UNVERIFIED**.
-   Resume the workflow when Claude session limit allows:
-   `Workflow({scriptPath: <workflows/scripts/audit-gq-shipped-today-*.js>, resumeFromRunId: "wf_36e2bf2b-b69"})`
-   — or keep verifying via glm-5-2 lanes, which do NOT consume the Claude limit.
+Rewritten 2026-09-03. The previous version described an audit that has since
+finished and decisions that have since been made; it was stale enough to
+mislead a cold session.
 
-   RESOLVED (later round, 2026-09-03): analytics toggle copy read broader than it acts
-   — it gates only the backend stream, never GA4 (real, copy fixed + pinned 896169c1);
-   iOS link has ct but no pt so ASC cannot attribute, and my own commit claimed it could
-   (real, RETRACTED 8c848369 — iOS installs are unattributed on BOTH surfaces);
-   cta_click beacon lost on same-tab nav, web CTA only (real, keepalive added 8c848369);
-   landing beacon sends no X-Session-ID so every event mints a session — this is why
-   206/265 "sessions" were landing-only; `landing_sessions` is an EVENT count (real,
-   NOT fixed, needs a decision); cta_impression can never be bot-filtered because the
-   funnel falls back to a hardcoded human UA (real, NOT fixed); composer-focus reset is
-   RELIABLE but fires once per focus/blur cycle, so the stage inflates (partially).
+### Blocked on the operator (I cannot do these)
 
-   RESOLVED (first round): consent opt-out could never be logged (real, fixed d402426f);
-   unknown GA4 platforms inflated native total (real, fixed 27d2f4c7);
-   compliance_result cardinality mismatch (real, recorded — see the warning above);
-   chat_tab_viewed "is a launch counter" (REFUTED — tabs build lazily, pinned by test);
-   landing-page consent header "introduced by this diff" (REFUTED — inherited from an
-   ancestor commit); onboarding_funnel unknown-platform inflation (REFUTED — that module
-   filters correctly, though it drops unknowns silently, which is worth a look).
+1. **ASC `pt` token — iOS installs are unattributed.** The store link carries
+   `ct` but Apple requires BOTH `pt` (provider token) and `ct`. `pt` comes from
+   generating a campaign link in App Store Connect and cannot be fabricated.
+   Until then iOS attribution is dead on both surfaces (`landing-page/src/App.jsx`).
 
-   PARTIALLY-CONFIRMED, no action taken:
-   - Starter chips auto-send without focusing first (`interactive_chat_screen.dart:1652`),
-     so `chat_send_attempted` fires BEFORE `chat_composer_focused`. A post-frame
-     `requestFocus` backfills the focus event, so counts mostly hold — but the ORDER is
-     inverted, which breaks any sequence-based funnel reading.
-   - New events read 0 for the current production installed base (they ship only in
-     26090203, internal track), so per-stage conversions between compliance_result and
-     first_chat_message show "0%" then blanks until the build reaches production.
-     `overall_install_to_chat_conversion` is computed install->chat directly and is
-     UNAFFECTED — read that field, not the per-stage bars, in the meantime.
-   - channel_installs issues one unpaginated GA4 request (limit 100k, no row_count check).
-     Moot today (1 channel row); structurally a silent-truncation risk if the dimension
-     ever goes high-cardinality. onboarding_funnel copied the same pattern.
+2. **GitLab -> Render webhook does not exist.** Confirmed 2026-09-03 via the
+   GitLab API: the project has ZERO webhooks. Render reports `autoDeploy: yes`,
+   which is why the setting looks healthy — nothing is listening to tell it a
+   push happened. Every deploy must be triggered by hand (see below) until a
+   hook is added. Creating a webhook is a persistent config change on the repo,
+   so it needs an explicit go-ahead.
 
-2. **Activation cliff cause.** Still unknown. Instrumentation is shipped but needs users on
-   `26090203`. Hypothesis workflow: `resumeFromRunId: "wf_07ec29c2-186"`. DO NOT guess a
-   cause — four guesses have already been wrong.
-3. **ASO full description.** Verified 3091-char copy in `docs/ASO_STORE_OPTIMIZATION.md`
-   (last section). Apply via `play-store-upload@gentlequest-prod`. Operator approval needed.
-4. **Weekly-review push destination** — `notification_payload_router.dart:42` sends the
-   Sunday push to the mood surface, not the letter. Product decision.
-5. **Orphaned retention lever** — `scheduleWeeklyReviewIfEligible` has zero callers.
-   Wire or delete; a lane investigation was dispatched and never returned.
-6. **iOS release** once disk allows.
+### Waiting on data (do not act before it reads)
+
+3. **The welcome-screen cliff.** 1.7.3+26090301 (internal) is the first build
+   carrying `welcome_screen_viewed` + `welcome_age_confirmed`. Until it has
+   real traffic those stages read 0, which means "not deployed", not "nobody".
+   When it has a day of use:
+   `python3 -m metrics.onboarding_funnel_ga4 --days 7`
+   That number decides whether ~74% never clearing the first screen is real or
+   an artifact of the gate we just instrumented. **Do not propose a fix before
+   it reads.** This plan has been wrong twice from exactly that impatience.
+
+### Done, recorded so nobody redoes them
+
+- Shipped-code audit: **18/18 resolved.** 11 real bugs fixed, 3 refuted, 4
+  partially-confirmed. Every fix carries an opposed control and a positive
+  control.
+- All four open decisions closed: funnel metric (eventCount -> totalUsers),
+  landing session id, bot filter (was dead by construction), ADR-008 ratified
+  with a corrected-risk amendment.
+- Composer engagement ordering + inflation fixed 2026-09-03 (the last
+  outstanding audit finding).
+
+### Standing operating notes
+
+- **Deploy the backend by hand** until the webhook exists:
+  `POST https://api.render.com/v1/services/srv-d2r3i1fdiees73dqtov0/deploys`
+  with `{"commitId": "<sha>"}` and the key from `~/.render/cli.yaml`.
+  Then SMOKE IT — `live` status is not evidence the change works.
+- **Ship Android** with `scripts/play_upload_internal.py` (internal-only by
+  construction; promotion stays a Console action).
+- **Check `df -h /` before any build.** 66 test files "failed to load" earlier
+  in this session at 100% disk; it was errno 28, not the code.
 
 ## CREDENTIALS / INFRA (hard-won; do not re-discover)
 
