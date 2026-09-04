@@ -43,7 +43,7 @@ Criterion (B) D14 ≥15%, n≥40 is the whole game. Everything else is in servic
 | **Android build BLOCKED** | **`flutter build appbundle` FAILS on Flutter 3.47.2.** Chain of required bumps, all applied: Gradle 8.12->8.14.3, AGP 8.7.3->8.11.1, Kotlin 2.1.0->2.2.20. The remaining blocker is a DEPENDENCY, not config: `sentry_flutter ^8.9.0` fails `compileReleaseKotlin` under Kotlin 2.2.20 — "Language version 1.6 is no longer supported; use 1.8 or greater". Fix = upgrade sentry_flutter (9.x/10.x) and adjust `Sentry.init` in main.dart if its API moved. Scoped task, not a tweak. **The AAB already on Play internal (26090302) is unaffected and still installable** — this blocks the NEXT Android build only. Do not attempt under 6 GB free disk. |
 | Toolchain | **Flutter is now 3.47.2** (was 3.32.8), on the SHARED checkout at `/Volumes/Samsung SSD 990 PRO 2TB Media/Dev/flutter` — a detached checkout at the tag. This affects EVERY project using that Flutter, not just GentleQuest. Required for iOS: only an engine built against the iOS 26 SDK renders on a phone once Xcode 26 links the app against SDK 26. Android AAB 26090302 currently on Play internal was built on 3.32.8; rebuild on 3.47.2 before the next Android ship so the two platforms are not on different engines. |
 | targetSdk 36 risk | **LOWER than first reported.** Edge-to-edge keys off targetSdk >=35 and the app was already at 35 (incl. production 26083001), so 35->36 introduces essentially no new exposure. Notifications unaffected (inexact alarms, no FGS). Composer and bottom nav are inset-aware (SafeArea + viewInsets). Ordinary release QA still applies. |
-| ADR-008 (D14 window restart) | **PROPOSED, unratified** — operator decision, kill-clause relevant |
+| ADR-008 (D14 window restart) | **RATIFIED 2026-09-03** by the operator. Window 2026-08-27 → 2026-10-22, scored 2026-11-05, D14 ≥15% on n≥40. Amendment 1 corrects its stated risk. |
 | ASO listing | live copy is 573/4000 chars, no "ADHD"; verified replacement ready, NOT applied |
 
 ## THE MEASURED NUMBERS (do not re-derive; re-measure only if stale)
@@ -385,29 +385,14 @@ anything outward-facing, deleting files the session did not create.
 > judgment, verification and commits for yourself. Verify every lane's work with
 > `git status --porcelain` and a real test run — never the tool's verdict, never the lane's
 > report. Run a positive control on any guard you add. Do not guess the activation-cliff
-> cause; it needs data. Do not apply store copy, promote to production, or ratify ADR-008
-> without asking me. Update the STATUS table and OPEN QUEUE in the same commit as anything
+> cause; it needs data. Do not apply store copy or promote to production without asking me.
+> (ADR-008 is already RATIFIED — that clause is spent. The live equivalent: do not narrow
+> ADR-007's ratified population to exclude internal installs without an ADR amendment.) Update the STATUS table and OPEN QUEUE in the same commit as anything
 > you ship. If you find yourself confident and unverified, stop and build the control instead.
 
-## NEXT SPRINT — the shape, ranked (written 2026-09-05)
+## NEXT SPRINT
 
-The engineering backlog is basically empty; what remains is one truth question
-and one distribution question. Ranked by what changes a decision:
-
-1. **Resolve the 5x contradiction.** Backend says 51 all-time first chats; GA4
-   says ~4/week native. Until that is settled, "is anyone using this" has no
-   answer, and every growth decision rests on it. Cheapest first cut: segment
-   the backend `Message` sessions by platform/user-agent and check for
-   anonymity-mode users and per-request session minting.
-2. **Get real installs onto an instrumented build.** The activation question
-   (does ~74% never clear the first screen?) cannot be answered by internal
-   traffic. This is distribution work, not engineering — and channel data says
-   no channel provably produces installs.
-3. **Unblock Android builds** — upgrade sentry_flutter past Kotlin 2.2.20.
-   Bounded, mechanical, delegable. Do it before the next Android ship, not
-   during one.
-4. **ASC `pt` token** (operator) — iOS installs stay unattributed without it.
-
-Do NOT start here: more instrument-building. Today proved the instruments are
-now the well-measured part; the unmeasured part is whether anyone is on the
-other end.
+**Superseded — the plan now lives in `docs/plan/SPRINT_2026-09-05.md` (v2,
+reviewed twice by gpt-5-6-sol-medium).** The ranked list that used to sit here
+led with "resolve the 5x contradiction", which is now CLOSED as non-comparable,
+and never mentioned D14. Read the plan file, not a summary of an older one.
