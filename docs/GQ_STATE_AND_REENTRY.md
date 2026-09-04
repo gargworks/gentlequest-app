@@ -25,10 +25,10 @@ Criterion (B) D14 ≥15%, n≥40 is the whole game. Everything else is in servic
 |---|---|
 | Play internal track | `1.7.2+26090203` live — crisis fix, nav fix, funnel events, consent toggle |
 | Play production | `26083001` (older) — promote is OPERATOR-ONLY |
-| Backend (Render) | live at `f88c36a9`; **auto-deploy is OFF**, deploy manually via API |
+| Backend (Render) | **auto-deploy WORKS again** since 2026-09-04 (GitLab hook 88208404 -> Render deploy hook; proven by a push deploying itself with `trigger: deploy_hook`). Earlier rows in this file saying auto-deploy is OFF describe the state BEFORE that fix. |
 | Committed but NOT in any build | weekly-review personalization, consent opt-out fix, lazy-tab test |
 | iOS | **LAUNCH CONFIRMED by the operator on a real iPhone (iOS 26.1), 2026-09-04.** 1.7.3 (26090304) (Delivery c48b4f83). ROOT CAUSE of the black screen, found by comparing a known-good IPA: an **iOS SDK mismatch**. Xcode 26.5 links Runner against SDK **26.5**, but Flutter 3.32.8's engine is built against **18.2** — 8 major versions apart — so iOS 26 composites via a path that engine does not drive. Frames render (the app-switcher snapshot showed the splash perfectly) but never reach the display: black, no crash, no error. The working 1.2.1 IPA had Runner sdk 18.5 / engine 18.2 — MATCHED. Fix: **Flutter upgraded 3.32.8 -> 3.47.2** (engine sdk 26.2). Now Runner 26.5 / engine 26.2. 3.35.7 was tried first and its engine is still 18.2, so it would NOT have fixed this. Suite 421 pass, same 5 known failures, 0 analyze errors. |
-| Android build | **1.7.3+26090301 LIVE on internal** 2026-09-03, verified via Play API (`internal: completed [26090301]`). Production untouched at `26083001`. Carries the welcome-screen instrumentation. Release script now exists: `scripts/play_upload_internal.py` (internal-only by construction). |
+| Android build | **1.7.3+26090302 LIVE on internal** (superseded 26090301 the same day; 26090302 is the one carrying the VOW instrumentation, verified via Play API). Production untouched at `26083001`. NOTE 26090305 was BUILT but never uploaded — the Flutter 3.47.2 upgrade blocks Android builds on sentry_flutter. Release script now exists: `scripts/play_upload_internal.py` (internal-only by construction). |
 | Backend | **DEPLOYED 2026-09-03**, `de786fac`, dep-dacjalbm8hqs73b4s0eg, live. Smoke-verified in the wild: 3 events one session id -> `landing_sessions: 1`; a bot-UA event declaring `_ua_class:human` was REJECTED; `unclassified_sessions: 8` + `insufficient_data: true`. NOTE: Render says `autoDeploy: yes` but had not deployed since 2026-09-02 — the GitLab webhook is not firing. Deploy manually until that is fixed. |
 | **Activation cliff — RELOCATED 2026-09-03** | The cliff is NOT at chat. Re-measured with `totalUsers` (was `eventCount`): 34 installs → 35 session_start → **9 compliance_check_started (26%)** → 8 → 3 first chat. `checkCompliance()` only runs AFTER the user taps "I am 18 or older", so the funnel began at the survivors of an UNMEASURED gate. ~74% never clear the welcome screen. Cause UNKNOWN — do not guess. `welcome_screen_viewed` + `welcome_age_confirmed` now instrument it; they read 0 until the next build ships. |
 | Landing analytics | **PROVEN END-TO-END IN THE WILD 2026-09-03.** GA4 realtime on the NEW property 551876340 recorded real traffic from gentlequest.app: `page_view 5, cta_impression 2, first_visit 1, session_start 1`. So the repoint is not just deployed, it is RECEIVING. Backend side: a real page load moved `landing_sessions` +1 with 0 unclassified (the server classified a real Chrome UA as human), 3 reloads in one tab stayed ONE session, and two tabs held distinct ids (read directly from sessionStorage). **Test-environment gotcha:** a fully BACKGROUND tab has `document.visibilityState === 'hidden'` and Chrome does not run IntersectionObserver callbacks there, so `cta_impression` never fires. I briefly read that as a product bug. It is not — verify with a focused window, or use GA4 realtime which sees `page_view` regardless. |
@@ -129,13 +129,42 @@ mislead a cold session.
    `trigger: deploy_hook` (not `api`), which reached `live`. Pushes to main
    deploy themselves again.
 
-### ⚠️ OPEN CONTRADICTION — two instruments, 5x apart (found 2026-09-05)
+### ⚠️ THE D14 COHORT MAY BE MOSTLY US (found 2026-09-05 — outranks everything)
 
-**The backend and GA4 disagree about first-chat, and I do not yet know which is
-right.** Do not quote either number until this is resolved.
+GA4 `first_open`, native, since the ADR-008 window opened 2026-08-27:
+**Android 28 + iOS 16 = 44** — so the gate's **n>=40 already reads as MET**.
 
-    backend  /api/metrics/true    19 sessions in 7d, 51 all-time
-    GA4      first_chat_message_sent   4 users in 7d (native), web ~0
+It is almost certainly not met honestly. Android appVersion 1.7.3 alone is 15
+users, and essentially all of those are my emulator runs on 09-03/04 (each
+`pm clear` + reinstall mints a new install). Operator device testing adds more.
+
+**A D14 verdict computed on that cohort is fiction, and it is fiction in the
+FAVOURABLE direction** — the failure mode that does not announce itself.
+ADR-007's population is ratified as "native iOS + Android" with no
+internal-traffic exclusion, and GA4 has no internal filter configured.
+
+Before anything else: quantify internal installs in the window, ratify an
+exclusion rule as an ADR-007 amendment (narrowing a ratified population
+silently is not allowed), and re-derive the honest eligible n.
+
+### ⚠️ INSTRUMENT RECONCILIATION (was "5x contradiction"; corrected 2026-09-05)
+
+**CORRECTED 2026-09-05 — the "5x" was largely MY unit error, caught by a
+gpt-5-6-sol-medium review.** `/api/metrics/true` returns `trend_7d` as unique
+sessions PER DAY (`routes/analytics_routes.py:398-409`). Summing it to "19 in
+7d" counts a session once per day it was active — session-days, not users. I
+compared session-days to GA4 users: the same eventCount-vs-totalUsers mistake
+I had fixed in the funnel two days earlier.
+
+    backend  trend_7d SUM = 19 session-days (NOT 19 users)
+             true 7d unique is bounded: max(daily)=6 <= true <= 19
+             all_time 51 IS a genuine distinct count
+    GA4      first_chat_message_sent = 4 native users, web excluded
+
+A real question survives (6..19 vs 4) but it is a bounded reconciliation, not a
+crisis. Also blocking naive comparison: `first_chat_message_sent` fires BEFORE
+the network call (`chat_provider.dart:341-362`) — it means "send attempted",
+not "message stored".
 
 They measure different things, which explains SOME of it but not 5x:
   - backend = unique sessions with >=1 user Message, ANY platform, straight
@@ -161,7 +190,7 @@ which silently invalidated the first.
 
 ### Waiting on data (do not act before it reads)
 
-3. **The welcome-screen cliff.** 1.7.3+26090301 (internal) is the first build
+3. **The welcome-screen cliff.** 1.7.3+26090302 (internal) is the first build
    carrying `welcome_screen_viewed` + `welcome_age_confirmed`. Until it has
    real traffic those stages read 0, which means "not deployed", not "nobody".
    When it has a day of use:
@@ -295,7 +324,7 @@ which silently invalidated the first.
   Two different 403s, both wrong accounts — not an access wall.
 - GA4: property `551876340`, web stream `G-MBBHN4PT39`. SA at `secret/gentlequestapp-sa.json`.
   This machine needs an IPv4 `socket.getaddrinfo` monkeypatch for GA4 calls.
-- Render: `srv-d2r3i1fdiees73dqtov0`, key in `~/.render/cli.yaml`. Auto-deploy OFF.
+- Render: `srv-d2r3i1fdiees73dqtov0`, key in `~/.render/cli.yaml` (a SESSION token; `render login` will not refresh it while valid — `mv ~/.render/cli.yaml{,.bak} && render login`). Auto-deploy ON via GitLab hook 88208404.
 - Flutter: `/Volumes/Samsung SSD 990 PRO 2TB Media/Dev/flutter/bin` (SSD must be mounted).
 - Gates: `flutter analyze` = **8** baseline. `flutter test` = **5 known failures**
   (interactive_chat x1, j03_compliance x4). Anything else is yours.
