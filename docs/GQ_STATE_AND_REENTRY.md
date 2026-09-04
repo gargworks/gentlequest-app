@@ -151,6 +151,21 @@ mislead a cold session.
 
    Do NOT read a 0 as "nobody did it" until it has read non-zero at least once.
 
+   **Read 2026-09-04, and the answer is "not yet, and not because of lag".**
+   Every install running an instrumented build is MINE (emulator) or the
+   operator's phone. n=10, all internal. The 74% question needs REAL installs;
+   no amount of waiting on GA4 changes that.
+
+   Use `--min-version 1.7.3`. Without it the funnel mixes builds that cannot
+   emit the new stages into the denominator and conversions exceed 100%
+   (welcome_viewed read 500%). A ratio over 100% is the instrument saying the
+   stages were measured over different populations — not a finding.
+
+   Granularity limit: GA4's appVersion is the versionNAME, so 1.7.3 covers
+   26090301 (no vow events) through 26090305 alike, and welcome_viewed still
+   reads 500% inside it. **Bump the version NAME, not just the build number,
+   when shipping a new funnel stage.**
+
    Emulator note: verifying on-device was attempted and abandoned. A cold boot
    grew `~/.android/avd/Pixel_7.avd/userdata-qemu.img.qcow2` to 10.3 GB and
    filled the disk mid-build — the shell stopped working entirely until the

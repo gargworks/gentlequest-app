@@ -97,6 +97,22 @@ FUNNEL_STAGES: List[Tuple[str, str]] = [
 ]
 
 
+def _version_tuple(v: str) -> Tuple[int, ...]:
+    """Parse a dotted versionName into comparable ints; unparseable -> (-1,).
+
+    Unparseable sorts BELOW every real version, so an unknown build is excluded
+    by a min_version filter rather than silently counted. Excluding what cannot
+    be compared is honest; guessing which side it falls on is not.
+    """
+    parts = []
+    for chunk in v.split("."):
+        digits = "".join(ch for ch in chunk if ch.isdigit())
+        if not digits:
+            return (-1,)
+        parts.append(int(digits))
+    return tuple(parts) if parts else (-1,)
+
+
 def _canonical_platform(raw: str) -> str:
     lower = (raw or "").strip().lower()
     if lower == "ios":
@@ -113,8 +129,25 @@ def _fetch_event_counts(
     property_id: str,
     start: date,
     end: date,
+    min_version: Optional[str] = None,
 ) -> Dict[str, Dict[str, int]]:
-    """Return {eventName: {platform: userCount}} for the funnel's event set."""
+    """Return {eventName: {platform: userCount}} for the funnel's event set.
+
+    ``min_version`` restricts every stage to users on app versions >= that
+    dotted versionName (e.g. "1.7.3"). Without it the funnel is unreadable
+    whenever a stage's event ships in a build most installs are not running
+    yet: the denominator counts everyone, the numerator only the new build, and
+    conversions come out ABOVE 100% (measured 2026-09-04: welcome_viewed read
+    500%). A ratio over 100% in a funnel is not a finding — it is the
+    instrument saying the stages were measured over different populations.
+
+    NOTE the granularity limit, because it matters for reading the result:
+    GA4's appVersion is the versionNAME, not the versionCode. It was checked
+    rather than assumed — a first attempt parsed it as a build number, matched
+    nothing, and silently zeroed every stage. So 1.7.3 covers 26090301 (no vow
+    events) through 26090305 alike; this filter cannot separate builds inside
+    one version name. Bump the version NAME when shipping a new funnel stage if
+    you want the stage to be separable."""
     if RunReportRequest is None:
         raise GateError("google_analytics_unavailable")
 
@@ -123,7 +156,10 @@ def _fetch_event_counts(
 
     request = RunReportRequest(
         property=f"properties/{property_id}",
-        dimensions=[Dimension(name="eventName"), Dimension(name="platform")],
+        dimensions=(
+            [Dimension(name="eventName"), Dimension(name="platform")]
+            + ([Dimension(name="appVersion")] if min_version else [])
+        ),
         # totalUsers, NOT eventCount.
         #
         # Corrected 2026-09-03. Every stage used to report eventCount, but the
@@ -167,6 +203,10 @@ def _fetch_event_counts(
     for row in response.rows:
         event_name = row.dimension_values[0].value
         platform = _canonical_platform(row.dimension_values[1].value)
+        if min_version:
+            raw = (row.dimension_values[2].value or "").strip()
+            if _version_tuple(raw) < _version_tuple(min_version):
+                continue
         event_count = int(row.metric_values[0].value)  # users, per the metric above
         if event_name not in wanted_events:
             continue
@@ -179,6 +219,7 @@ def collect_onboarding_funnel(
     *,
     days: int = 7,
     property_id: Optional[str] = None,
+    min_version: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Run the funnel report and return a structured result.
 
@@ -192,7 +233,7 @@ def collect_onboarding_funnel(
 
     try:
         client = build_ga4_client()
-        counts = _fetch_event_counts(client, property_id, start, end)
+        counts = _fetch_event_counts(client, property_id, start, end, min_version)
     except GateError as exc:
         return {
             "status": "error",
@@ -281,10 +322,22 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--days", type=int, default=7)
     parser.add_argument("--property-id", default=None)
+    parser.add_argument(
+        "--min-version",
+        default=None,
+        help=(
+            "Only count users on app versionName >= this (e.g. 1.7.3). Use it "
+            "whenever a stage's event ships in a build the whole install base "
+            "is not on yet; without it conversions exceed 100%% and the funnel "
+            "is measuring two different populations."
+        ),
+    )
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
 
-    result = collect_onboarding_funnel(days=args.days, property_id=args.property_id)
+    result = collect_onboarding_funnel(
+        days=args.days, property_id=args.property_id, min_version=args.min_version
+    )
     if args.json:
         print(json.dumps(result, indent=2))
     else:
