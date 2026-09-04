@@ -5,7 +5,7 @@ The reasoning behind the plan (why each workstream exists, what was tried and re
 lives in `docs/plan/GQ_5WEEK_PLAN.md`.
 Update the STATUS table and OPEN QUEUE in the same commit as any work you ship.
 
-Last updated: 2026-09-03
+Last updated: 2026-09-05
 
 ---
 
@@ -49,11 +49,26 @@ Criterion (B) D14 ≥15%, n≥40 is the whole game. Everything else is in servic
 ## THE MEASURED NUMBERS (do not re-derive; re-measure only if stale)
 
 ```
-GA4 property 551876340, native only (iOS+Android), 7d:
-  first_open 22 -> compliance_check_started 16 -> compliance_result 12
+GA4 property 551876340, native only, 7d to 2026-09-04, --min-version 1.7.3:
+  first_open 10 -> vow_screen_viewed 2 -> vow_begin_tapped 1
+  -> welcome_screen_viewed 5 -> welcome_age_confirmed 4
+  -> compliance_check_started 4 -> chat_tab_viewed 3
   -> first_chat_message_sent 3
+
 Channel attribution, 30d: 100% of installs are "(direct) / (none)"
 ```
+
+**READ THAT FUNNEL AS INSUFFICIENT, NOT AS A RESULT.** Every install on an
+instrumented build is internal (my emulator, the operator's phone), n=10.
+welcome_viewed still converts at 500% because appVersion is the version NAME
+and 1.7.3 spans builds with and without the vow events. ALWAYS pass
+`--min-version`; without it the denominator is every install and conversions
+exceed 100%.
+
+**And it is contradicted by the backend — see the OPEN CONTRADICTION below.**
+`/api/metrics/true` reports 19 first-chat sessions in the same 7 days and 51
+all-time. Do not repeat my 2026-09-04 error of concluding "nobody is using it"
+from the GA4 view alone.
 
 ### ⚠️ THE 12 -> 3 CLIFF IS NOT A CLEAN NUMBER (verified 2026-09-03)
 
@@ -326,3 +341,26 @@ anything outward-facing, deleting files the session did not create.
 > cause; it needs data. Do not apply store copy, promote to production, or ratify ADR-008
 > without asking me. Update the STATUS table and OPEN QUEUE in the same commit as anything
 > you ship. If you find yourself confident and unverified, stop and build the control instead.
+
+## NEXT SPRINT — the shape, ranked (written 2026-09-05)
+
+The engineering backlog is basically empty; what remains is one truth question
+and one distribution question. Ranked by what changes a decision:
+
+1. **Resolve the 5x contradiction.** Backend says 51 all-time first chats; GA4
+   says ~4/week native. Until that is settled, "is anyone using this" has no
+   answer, and every growth decision rests on it. Cheapest first cut: segment
+   the backend `Message` sessions by platform/user-agent and check for
+   anonymity-mode users and per-request session minting.
+2. **Get real installs onto an instrumented build.** The activation question
+   (does ~74% never clear the first screen?) cannot be answered by internal
+   traffic. This is distribution work, not engineering — and channel data says
+   no channel provably produces installs.
+3. **Unblock Android builds** — upgrade sentry_flutter past Kotlin 2.2.20.
+   Bounded, mechanical, delegable. Do it before the next Android ship, not
+   during one.
+4. **ASC `pt` token** (operator) — iOS installs stay unattributed without it.
+
+Do NOT start here: more instrument-building. Today proved the instruments are
+now the well-measured part; the unmeasured part is whether anyone is on the
+other end.
