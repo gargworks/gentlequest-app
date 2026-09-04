@@ -147,7 +147,21 @@ Before anything else: quantify internal installs in the window, ratify an
 exclusion rule as an ADR-007 amendment (narrowing a ratified population
 silently is not allowed), and re-derive the honest eligible n.
 
-### ⚠️ INSTRUMENT RECONCILIATION (was "5x contradiction"; corrected 2026-09-05)
+### ✅ CLOSED — backend vs GA4 first-chat is NOT reconcilable (2026-09-05)
+
+**Ruling: `/api/metrics/true` may not be compared to the GA4 funnel or used to
+claim anything about NATIVE users.** Neither `Message` nor `AnalyticsEvent` has
+a platform column (verified in `models.py`), so backend chat sessions cannot be
+segmented by platform by any query — the backend figure is all-platforms by
+construction, the GA4 figure native-only by ADR-007 construction. Add a platform
+column to `Message` or stop treating them as two views of one thing.
+
+Also inflating the backend side, both CERTAIN: `/api/chat` mints a new session
+per message when `X-Session-ID` is absent (`routes/chat.py:44`), so any curl or
+bot creates one session per message; and the test blocklist is 7 hand-written
+UUIDs of which 1 has ever matched.
+
+Historical note on how this was framed:
 
 **CORRECTED 2026-09-05 — the "5x" was largely MY unit error, caught by a
 gpt-5-6-sol-medium review.** `/api/metrics/true` returns `trend_7d` as unique
