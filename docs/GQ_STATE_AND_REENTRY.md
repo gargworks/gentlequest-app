@@ -138,8 +138,12 @@ It is almost certainly not met honestly. Android appVersion 1.7.3 alone is 15
 users, and essentially all of those are my emulator runs on 09-03/04 (each
 `pm clear` + reinstall mints a new install). Operator device testing adds more.
 
-**A D14 verdict computed on that cohort is fiction, and it is fiction in the
-FAVOURABLE direction** — the failure mode that does not announce itself.
+**A D14 verdict on that cohort is fiction in BOTH directions.** D14 is
+`returned / eligible_n`; an emulator install sits in the denominator and never
+returns. So contamination RAISES n (n>=40 looks met) while LOWERING the rate
+(D14>=15% looks failed). The realistic risk is a **false FAIL we believe** — a
+genuine 15% dragged under the bar by installs that were never users, on a gate
+whose rule is "unmeasurable = FAILED".
 ADR-007's population is ratified as "native iOS + Android" with no
 internal-traffic exclusion, and GA4 has no internal filter configured.
 
