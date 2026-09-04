@@ -114,6 +114,36 @@ mislead a cold session.
    `trigger: deploy_hook` (not `api`), which reached `live`. Pushes to main
    deploy themselves again.
 
+### ⚠️ OPEN CONTRADICTION — two instruments, 5x apart (found 2026-09-05)
+
+**The backend and GA4 disagree about first-chat, and I do not yet know which is
+right.** Do not quote either number until this is resolved.
+
+    backend  /api/metrics/true    19 sessions in 7d, 51 all-time
+    GA4      first_chat_message_sent   4 users in 7d (native), web ~0
+
+They measure different things, which explains SOME of it but not 5x:
+  - backend = unique sessions with >=1 user Message, ANY platform, straight
+    from the DB, independent of GA4 and unaffected by the property migration.
+  - GA4 = native users who fired `first_chat_message_sent`; web excluded by
+    ADR-007 construction.
+
+Candidate causes, none verified: Anonymity-mode users (suppressed in GA4,
+still written to the DB); web-app users at app.gentlequest.app; sessions minted
+per-request where `X-Session-ID` is absent (the exact defect fixed for the
+LANDING page on 2026-09-03 — check whether any app path has it too); test or
+internal traffic not excluded by the blocklist.
+
+**Why this matters more than it looks:** on 2026-09-04 I concluded from GA4
+alone that there were "no real users, only the operator and my emulator". The
+backend says 51 all-time first chats. One of those two statements is wrong, and
+the one I acted on was the one with the narrower view. Resolve before any
+product decision rests on "nobody is using it".
+
+This surfaced only because the operator asked whether an OLD funnel doc still
+had value. It did — an independent second instrument that survived a migration
+which silently invalidated the first.
+
 ### Waiting on data (do not act before it reads)
 
 3. **The welcome-screen cliff.** 1.7.3+26090301 (internal) is the first build

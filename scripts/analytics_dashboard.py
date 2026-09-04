@@ -43,7 +43,12 @@ except ImportError:  # GA4 client libs not installed in this environment.
     service_account = None  # type: ignore[assignment]
 
 # ── Config ──
-PROPERTY_ID = "516568186"
+# 2026-09-05: was 516568186 — the ABANDONED gentlequest-prod property. The
+# current service account gets a 403 on it, so this script's GA4 section could
+# not have worked since the 2026-08-27 migration. ADR-007 ratified 551876340.
+# A 403 was the lucky outcome; a readable-but-wrong property would have been
+# silent.
+PROPERTY_ID = "551876340"
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 METRICS_DIR = PROJECT_ROOT / "metrics"
 JSON_OUT = METRICS_DIR / "analytics_latest.json"
